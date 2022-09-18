@@ -131,7 +131,7 @@ class GameMap extends AcGameObject {
 class Particle extends AcGameObject {
     constructor(playground, x, y, radius, vx, vy, color, speed, move_length) {
         super();
-        this,playground = playground;
+        this.playground = playground;
         this.ctx = this.playground.game_map.ctx;
         this.x = x;
         this.y = y;
