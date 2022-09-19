@@ -43,5 +43,6 @@ class AcGamePlayground{
     }
     hide() { //关闭playground界面
         this.$playground.hide();
+        
     }
 }
