@@ -14,7 +14,7 @@ class AcGameMenu{
         </div>
         <br>
         <div class="ac-game-menu-field-item ac-game-menu-field-item-settings">
-            设置
+            退出
         </div>
 
     </div>
@@ -43,6 +43,7 @@ class AcGameMenu{
         });
         this.$settings.click(function(){
             console.log("click3");
+            outer.root.settings.logout_on_remote();
         });
     }
     show(){ //显示menu界面
@@ -500,7 +501,6 @@ class Settings {
             </div>
         </div>
         <div class="ac-game-settings-error-message">
-            用户名密码错误
         </div>
         <div class="ac-game-settings-option">
             注册
@@ -597,6 +597,9 @@ class Settings {
         this.$login_register.click(function() {
             outer.register();
         });
+        this.$login_submit.click(function() {
+            outer.login_on_remote();
+        });
     }
 
     add_listening_events_register() {
@@ -604,6 +607,75 @@ class Settings {
         this.$register_login.click(function() {
             outer.login();
         });
+        this.$register_submit.click(function() {
+            outer.register_on_remote();
+        })
+    }
+
+
+    login_on_remote() { //在远程服务器上登陆
+        let outer = this;
+        let username = this.$login_username.val();
+        let password = this.$login_password.val();
+        this.$login_error_message.empty();
+
+        $.ajax({
+            url: "http://112.124.23.44:8000/settings/login/",
+            type: "GET",
+            data: {
+                username: username,
+                password: password,
+            },
+            success: function(resp) {
+                console.log(resp);
+                if (resp.result === "success") {
+                    location.reload();
+                } else {
+                    outer.$login_error_message.html(resp.result);
+                }
+            }
+        });
+    }
+
+    register_on_remote() { //在远程服务器上注册
+        let outer = this;
+        let username = this.$register_username.val();
+        let password = this.$register_password.val();
+        let password_confirm = this.$register_password_confirm.val();
+        this.$register_error_message.empty();
+
+        $.ajax({
+            url: "http://112.124.23.44:8000/settings/register/",
+            type: "GET",
+            data: {
+                username: username,
+                password: password,
+                password_confirm: password_confirm,
+            },
+            success: function(resp) {
+                console.log(resp);
+                if(resp.result === "success") {
+                    location.reload(); //  刷新页面
+                } else {
+                    outer.$register_error_message.html(resp.result);
+                }
+            }
+        });
+    }
+
+    logout_on_remote() { // 在远程服务器上登出
+        if(this.platform === "ACAPP") return false;
+
+        $.ajax({
+            url: "http://112.124.23.44:8000/settings/logout/",
+            type: "GET",
+            success: function(resp) {
+                console.log(resp);
+                if (resp.result === "success") {
+                    location.reload();
+                }
+            }
+        })
     }
 
     register() {    //打开注册界面
