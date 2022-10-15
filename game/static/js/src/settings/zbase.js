@@ -34,12 +34,14 @@ class Settings {
         </div>
         <br>
         <br>
+        <!--
         <div class="ac-game-settings-acwing">
             <img width="30" src="http://112.124.23.44:8000/static/image/settings/acwing_logo.png">
             <div>
                 AcWing一键登录
             </div>
         </div>
+        -->
     </div>
     <div class="ac-game-settings-register">
          <div class="ac-game-settings-title">
@@ -73,12 +75,14 @@ class Settings {
         </div>
         <br>
         <br>
+        <!--
         <div class="ac-game-settings-acwing">
             <img width="30" src="http://112.124.23.44:8000/static/image/settings/acwing_logo.png">
             <div>
                 AcWing一键登录
             </div>
         </div>
+        -->
     </div>
 
 
