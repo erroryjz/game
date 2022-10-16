@@ -62,6 +62,19 @@ class AcGameObject {
         AC_GAME_OBJECTS.push(this);
         this.has_called_start = false;//是否执行过start函数
         this.timedelta = 0; //当钱帧距离上一帧的时间间隔
+        this.uuid = this.create_uuid();
+        console.log(this.uuid);
+    }
+
+
+    create_uuid() {
+        let res = "";
+        for(let i = 0; i < 8; i ++)
+        {
+            let x = parseInt(Math.floor(Math.random() * 10));
+            res += x;
+        }
+        return res;
     }
 
     start() {// 只会在第一帧执行
@@ -341,7 +354,7 @@ class Player extends AcGameObject {
 
     update_move() {// 更新玩家移动
         this.spent_time += this.timedelta / 1000;
-        if(!this.character === "robot" && this.spent_time > 4 && Math.random() < 1 / 300.0) {
+        if(this.character === "robot" && this.spent_time > 4 && Math.random() < 1 / 300.0) {
             let player = this.playground.players[Math.floor(Math.random() * this.playground.players.length)];
             let tx = player.x + player.speed * this.vx * this.timedelta / 1000 * 0.3;
             let ty = player.y + player.speed * this.vy * this.timedelta / 1000 * 0.3;
@@ -475,6 +488,28 @@ class FireBall extends AcGameObject {
     }
 
 }
+class MultiPlayerSocket
+{
+    constructor(playground) {
+        this.playground = playground;
+
+        this.ws = new WebSocket("ws://112.124.23.44:8000/ws/multiplayer/");
+
+        this.start();
+    }
+
+    start() {
+    }
+
+    send_create_player() {
+        this.ws.send(JSON.stringify({
+            'message': "hello, server",
+        }));
+    }
+
+    receive_create_player() {
+    }
+}
 class AcGamePlayground{
     constructor(root){
         this.root = root;
@@ -522,6 +557,7 @@ class AcGamePlayground{
 
     show(mode) //打开playground界面
     {
+        let outer = this;
         this.$playground.show();
         //this.resize();
         /*this.root.$ac_game.append(this.$playground);*/
@@ -541,7 +577,11 @@ class AcGamePlayground{
         }
         else if(mode === "multi mode")
         {
-
+            this.mps = new MultiPlayerSocket(this);
+            this.mps.uuid = this.players[0].uuid;
+            this.mps.ws.onopen = function() {
+                outer.mps.send_create_player();
+            };
         }
 
     }
