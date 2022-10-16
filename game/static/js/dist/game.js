@@ -230,7 +230,7 @@ class Player extends AcGameObject {
     start() {
         if (this.character === "me") {
             this.add_listening_events();
-        } else{
+        } else if(this.character === "robot") {
             let tx = Math.random() * this.playground.width / this.playground.scale;
             let ty = Math.random() * this.playground.height / this.playground.scale;
             this.move_to(tx, ty);
@@ -488,8 +488,7 @@ class FireBall extends AcGameObject {
     }
 
 }
-class MultiPlayerSocket
-{
+class MultiPlayerSocket{
     constructor(playground) {
         this.playground = playground;
 
@@ -499,15 +498,49 @@ class MultiPlayerSocket
     }
 
     start() {
+        this.receive();
     }
 
-    send_create_player() {
+    receive() {
+        let outer = this;
+        this.ws.onmessage = function(e) {
+           
+            let data = JSON.parse(e.data);
+            let uuid = data.uuid;
+            if(uuid === outer.uuid) return false;
+
+            let event = data.event;
+            if(event === "create_player") {
+                outer.receive_create_player(uuid, data.username, data.photo);
+            }
+        };
+    }
+
+    send_create_player(username, photo) {
+        let outer = this;
         this.ws.send(JSON.stringify({
-            'message': "hello, server",
+            'event': "create_player",
+            'uuid': outer.uuid,
+            'username': username,
+            'photo': photo,
         }));
     }
 
-    receive_create_player() {
+    receive_create_player(uuid, username, photo) {
+        let player = new Player(
+            this.playground,
+            this.playground.width / 2 / this.playground.scale,
+            0.5,
+            0.05,
+            "white",
+            0.15,
+            "enemy",
+            username,
+            photo,
+        );
+
+        player.uuid = uuid;
+        this.playground.players.push(player);
     }
 }
 class AcGamePlayground{
@@ -580,7 +613,7 @@ class AcGamePlayground{
             this.mps = new MultiPlayerSocket(this);
             this.mps.uuid = this.players[0].uuid;
             this.mps.ws.onopen = function() {
-                outer.mps.send_create_player();
+                outer.mps.send_create_player(outer.root.settings.username, outer.root.settings.photo);
             };
         }
 
