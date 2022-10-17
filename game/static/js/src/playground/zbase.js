@@ -54,6 +54,8 @@ class AcGamePlayground{
         this.game_map = new GameMap(this);
         
         this.mode = mode;
+        this.state = "waiting"; // 小于三人处于waiting状态，三人开始fighting状态->over
+        this.notice_board = new NoticeBoard(this);
 
         
         this.resize();
