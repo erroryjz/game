@@ -120,11 +120,90 @@ let AC_GAME_ANIMATION = function(timestamp) {
 }
 
 requestAnimationFrame(AC_GAME_ANIMATION);
+class ChatField {
+    constructor(playground) {
+        this.playground = playground;
+
+        this.$history = $(`<div class="ac-game-chat-field-history">历史记录</div>`);
+        this.$input = $(`<input type="text" class="ac-game-chat-field-input">`);
+
+        this.$history.hide();
+        this.$input.hide();
+        this.func_id = null;    //  监听函数id，这里即聊天框id
+
+        this.playground.$playground.append(this.$history);
+        this.playground.$playground.append(this.$input);
+
+        this.start();
+
+    }
+
+    start() {
+        this.add_listening_events();
+    }
+
+    add_listening_events() {
+        let outer = this;
+
+        this.$input.keydown(function(e) {
+            if(e.which === 27) {    //ESC
+                outer.hide_input();
+                return false;
+
+            } else if(e.which === 13) { //ENTER
+                let username = outer.playground.root.settings.username;
+                let text = outer.$input.val();
+                if(text) {
+                    outer.$input.val("");
+                    outer.add_message(username, text);
+                }
+                return false;
+
+            }
+        });
+    }
+
+    render_message(message) {
+        return $(`<div>${message}</div>`);
+    }
+
+    add_message(username, text) {
+        this.show_history();
+        let message = `[${username}]${text}`;
+        this.$history.append(this.render_message(message));
+        this.$history.scrollTop(this.$history[0].scrollHeight); //  每次添加新内容文本框显示新内容即拖到文本框底部
+    }
+
+    show_history() {
+        let outer = this;
+        this.$history.fadeIn();
+
+        if(this.func_id) clearTimeout(this.func_id);    //用以解决多次打开聊天框，聊天记录迅速消失问题
+
+        this.func_id = setTimeout(function() {
+            outer.$history.fadeOut();
+            outer.func_id = null;
+        }, 3000);
+    }
+
+    show_input() {
+        this.show_history();
+
+        this.$input.show();
+        this.$input.focus();
+        
+    }
+
+    hide_input() {
+        this.$input.hide();
+        this.playground.game_map.$canvas.focus();
+    }
+}
 class GameMap extends AcGameObject {
     constructor(playground) {
         super();
         this.playground = playground;
-        this.$canvas = $(`<canvas></canvas>`);
+        this.$canvas = $(`<canvas tabindex=0></canvas>`);
         this.ctx = this.$canvas[0].getContext('2d');
         this.ctx.canvas.width = this.playground.width;
         this.ctx.canvas.height = this.playground.height;
@@ -132,6 +211,7 @@ class GameMap extends AcGameObject {
     }
 
     start() {
+        this.$canvas.focus();
     }
 
     resize()
@@ -293,7 +373,7 @@ class Player extends AcGameObject {
         });
         this.playground.game_map.$canvas.mousedown(function(e) {
             if(outer.playground.state !== "fighting")
-                return false;
+                return true;
             const rect = outer.ctx.canvas.getBoundingClientRect();
             if (e.which === 3)
             {
@@ -329,7 +409,18 @@ class Player extends AcGameObject {
             }
         });
 
-        $(window).keydown(function(e) {
+        this.playground.game_map.$canvas.keydown(function(e) {
+            if(e.which === 13) {    //enter
+                if(outer.playground.mode === "multi mode") {//  打开聊天框
+                    outer.playground.chat_field.show_input();
+                    return false;
+                }
+            } else if (e.which === 27) { // esc
+                if(outer.playground.mode === "multi mode") {    //  关闭聊天框  
+                    outer.playground.chat_field.hide_input();
+                }
+            }
+
             if(outer.playground.state !== "fighting")
                 return true;
 
@@ -924,6 +1015,7 @@ class AcGamePlayground{
         }
         else if(mode === "multi mode")
         {
+            this.chat_field = new ChatField(this);
             this.mps = new MultiPlayerSocket(this);
             this.mps.uuid = this.players[0].uuid;
             this.mps.ws.onopen = function() {
