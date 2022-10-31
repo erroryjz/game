@@ -151,7 +151,7 @@ class MultiPlayer(AsyncWebsocketConsumer):
                 cache.set(self.room_name, players, 3600)
         else:
             def db_update_player_score(username, score):
-                player = player.objects.get(user__username=username)
+                player = Player.objects.get(user__username=username)
                 player.score += score
                 player.save()
             for player in players:

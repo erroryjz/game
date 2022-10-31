@@ -113,9 +113,31 @@ class Settings {
     }
 
     start() {
-        this.getinfo();
+        if(this.root.access) {
+            this.getinfo();
+            //this.refresh_jwt_token();
+        } else {
+            this.login();
+        }
         this.add_listening_events();
+        
     }
+
+    /*refresh_jwt_token() {
+        setInterval(() => {
+            $.ajax({
+                url: "http://112.124.23.44/settings/token/refresh/",
+                type: "post",
+                data: {
+                    refresh: this.root.refresh,
+                },
+                success: resp => {
+                    this.root.access = resp.access;
+                }
+            });
+        }, 1000);
+    }*/
+
 
     add_listening_events() {
         this.add_listening_events_login();
@@ -145,25 +167,25 @@ class Settings {
 
 
     login_on_remote() { //在远程服务器上登陆
-        let outer = this;
         let username = this.$login_username.val();
         let password = this.$login_password.val();
         this.$login_error_message.empty();
 
         $.ajax({
-            url: "http://112.124.23.44:8000/settings/login/",
-            type: "GET",
+            url: "http://112.124.23.44:8000/settings/token/",
+            type: "post",
             data: {
                 username: username,
                 password: password,
             },
-            success: function(resp) {
-                //console.log(resp);
-                if (resp.result === "success") {
-                    location.reload();
-                } else {
-                    outer.$login_error_message.html(resp.result);
-                }
+            success: resp => {
+                this.root.access = resp.access;
+                this.root.refresh = resp.refresh;
+                //this.refresh_jwt_token();
+                this.getinfo();
+            },
+            error: () => {
+                this.$login_error_message.html("用户名或密码错误");
             }
         });
     }
@@ -200,16 +222,9 @@ class Settings {
             this.root.AcWingOS.api.window.close();
         }
         else{
-            $.ajax({
-                url: "http://112.124.23.44:8000/settings/logout/",
-                type: "GET",
-                success: function(resp) {
-                    //console.log(resp);
-                    if (resp.result === "success") {
-                    location.reload();
-                    }
-                }
-            });
+            this.root.access = "";
+            this.root.refresh = "";
+            location.href = "/";
         }
     }
 
@@ -223,22 +238,24 @@ class Settings {
     }
 
     getinfo() {
-        let outer = this;
         $.ajax({
             url: "http://112.124.23.44:8000/settings/getinfo/",
             type: "GET",
             data: {
-                platform: outer.platform,
+                platform: this.platform,
             },
-            success: function(resp) {
+            headers: {
+                'Authorization': "Bearer " + this.root.access,
+            },
+            success: resp => {
                 //console.log(resp);
                 if(resp.result === "success") {
-                    outer.username = resp.username;
-                    outer.photo = resp.photo;
-                    outer.hide();
-                    outer.root.menu.show();
+                    this.username = resp.username;
+                    this.photo = resp.photo;
+                    this.hide();
+                    this.root.menu.show();
                 } else {
-                    outer.login();
+                    this.login();
                 }
             }
 
